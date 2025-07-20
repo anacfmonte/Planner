@@ -1,0 +1,74 @@
+/* Reset e base */
+body {
+  font-family: Arial, sans-serif;
+  background-color: #d1c1da;
+  padding: 20px;
+  margin: 0;
+}
+
+/* Container centralizado com sombra e borda arredondada */
+.container {
+  max-width: 800px;
+  margin: auto;
+  background: white;
+  padding: 20px;
+  border-radius: 12px;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+}
+
+/* Formulário em grid responsivo */
+form {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+/* Mensagem de erro */
+.mensagem-erro,
+#mensagem-erro {
+  color: red;
+  font-weight: bold;
+  margin-top: 10px;
+}
+
+/* Tarefas */
+.task-card {
+  padding: 10px;
+  border-left: 5px solid #ccc;
+  background: #f1f1f1;
+  margin-bottom: 10px;
+  border-radius: 8px;
+}
+
+/* Botão de adicionar menor e alinhado */
+#task-form button[type="submit"] {
+  padding: 6px 20px;
+  font-size: 14px;
+  margin: 20px auto 0 auto;
+  display: block;
+}
+
+/* Cores por urgência */
+.task-card.Alta {
+  border-color: red;
+}
+.task-card.Média {
+  border-color: orange;
+}
+.task-card.Baixa {
+  border-color: green;
+}
+
+/* Edição */
+.task-card.editing {
+  background-color: #fff7e6;
+}
+
+/* Filtro flexível */
+.filtro-section {
+  display: flex;
+  gap: 10px;
+  margin: 20px 0;
+  flex-wrap: wrap;
+}
