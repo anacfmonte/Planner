@@ -1,192 +1,208 @@
+// Seleciona elementos do DOM
 const form = document.getElementById("task-form");
 const tasksContainer = document.getElementById("tasks-container");
 const filtroArea = document.getElementById("filtro-area");
 const filtroUrgencia = document.getElementById("filtro-urgencia");
+const filtroDia = document.getElementById("filtro-dia");
 const mensagemErro = document.getElementById("mensagem-erro");
+const resumoTarefas = document.getElementById("resumo-tarefas");
 
-let tarefas = [];
+// Recupera tarefas salvas do localStorage ou inicia vazio
+let tarefas = JSON.parse(localStorage.getItem("tarefas")) || [];
 
-form.addEventListener("submit", (e) => {
-  e.preventDefault();
+// Salva a lista de tarefas no localStorage
+const salvarTarefas = () => {
+  localStorage.setItem("tarefas", JSON.stringify(tarefas));
+};
 
-  const tarefa = {
-    id: Date.now(),
-    title: form.title.value.trim(),
-    urgencia: form.urgencia.value,
-    area: form.area.value,
-    duration: form.duration.value,
-    day: form.day.value,
-    obs: form.obs.value,
-    realizada: false,
-  };
-
-  if (!validarCampos(tarefa)) return;
-
-  tarefas.push({ ...tarefa, duration: parseInt(tarefa.duration) });
-  form.reset();
-  mensagemErro.textContent = "";
-  atualizarLista();
-});
-
-function validarCampos(tarefa) {
+// Valida campos do formulário
+const validarCampos = (tarefa) => {
   if (
     !tarefa.title ||
     !tarefa.urgencia ||
     !tarefa.area ||
-    !tarefa.duration ||
+    !tarefa.startTime ||
+    !tarefa.endTime ||
     !tarefa.day
   ) {
-    mensagemErro.textContent =
-      "⚠️ Por favor, preencha todos os campos obrigatórios.";
+    mensagemErro.textContent = "⚠️ Preencha todos os campos obrigatórios.";
     return false;
   }
 
-  if (isNaN(parseInt(tarefa.duration)) || parseInt(tarefa.duration) <= 0) {
-    mensagemErro.textContent =
-      "⚠️ A duração deve ser um número maior que zero.";
+  if (tarefa.startTime >= tarefa.endTime) {
+    mensagemErro.textContent = "⚠️ Hora de início deve ser menor que a de término.";
     return false;
   }
 
+  mensagemErro.textContent = "";
   return true;
-}
+};
 
-// Atualiza a lista de tarefas exibidas
-function atualizarLista() {
+// Limpa os campos do formulário
+const limparFormulario = () => {
+  form.reset();
+  mensagemErro.textContent = "";
+};
+
+// Cria visualmente o card da tarefa
+const criarCardTarefa = (tarefa) => {
+  const div = document.createElement("div");
+  div.className = `task-card ${tarefa.urgencia} ${tarefa.realizada ? "realizada" : ""}`;
+  div.setAttribute("tabindex", "0");
+  div.setAttribute("aria-label", `Tarefa: ${tarefa.title}`);
+
+  div.innerHTML = `
+    <h3>${tarefa.title}</h3>
+    <p><strong>Urgência:</strong> ${tarefa.urgencia}</p>
+    <p><strong>Área:</strong> ${tarefa.area}</p>
+    <p><strong>Início:</strong> ${tarefa.startTime}</p>
+    <p><strong>Término:</strong> ${tarefa.endTime}</p>
+    <p><strong>Data:</strong> ${tarefa.day}</p>
+    <p><strong>Obs:</strong> ${tarefa.obs || "Nenhuma"}</p>
+    <div>
+      <button class="btn btn-success" ${tarefa.realizada ? "disabled" : ""}>Feita</button>
+      <button class="btn btn-warning">Editar</button>
+      <button class="btn btn-danger">Excluir</button>
+    </div>
+  `;
+
+  const [btnFeita, btnEditar, btnExcluir] = div.querySelectorAll("button");
+
+  btnFeita.addEventListener("click", () => marcarRealizada(tarefa.id));
+  btnEditar.addEventListener("click", () => editarTarefa(tarefa.id));
+  btnExcluir.addEventListener("click", () => excluirTarefa(tarefa.id));
+
+  return div;
+};
+
+// Atualiza a exibição das tarefas
+const atualizarLista = () => {
   tasksContainer.innerHTML = "";
-  const area = filtroArea.value;
-  const urgencia = filtroUrgencia.value;
 
-  tarefas
-    .filter(
-      (t) =>
-        (!area || t.area === area) && (!urgencia || t.urgencia === urgencia)
-    )
+  const tarefasFiltradas = tarefas
+    .filter((t) => {
+      const areaOk = !filtroArea.value || t.area === filtroArea.value;
+      const urgenciaOk = !filtroUrgencia.value || t.urgencia === filtroUrgencia.value;
+      const diaOk = !filtroDia.value || t.day === filtroDia.value;
+      return areaOk && urgenciaOk && diaOk;
+    })
     .sort((a, b) => {
+      if (a.day !== b.day) return a.day.localeCompare(b.day);
       const prioridade = { Alta: 1, Média: 2, Baixa: 3 };
       return prioridade[a.urgencia] - prioridade[b.urgencia];
-    })
-    .forEach((tarefa) => {
-      const div = document.createElement("div");
-      div.className = "card task-card";
-      div.innerHTML = `
-        <div class="card-body">
-          <h5 class="card-title">${tarefa.title}</h5>
-          <p class="card-text"><strong>Urgência:</strong> ${tarefa.urgencia}</p>
-          <p class="card-text"><strong>Área:</strong> ${tarefa.area}</p>
-          <p class="card-text"><strong>Duração:</strong> ${tarefa.duration} min</p>
-          <p class="card-text"><strong>Data:</strong> ${tarefa.day}</p>
-          <p class="card-text"><strong>Obs:</strong> ${tarefa.obs}</p>
-          <button class="btn btn-success btn-sm" onclick="marcarRealizada(${tarefa.id})">Feita</button>
-          <button class="btn btn-warning btn-sm" onclick="editarTarefa(${tarefa.id})">Editar</button>
-          <button class="btn btn-danger btn-sm" onclick="excluirTarefa(${tarefa.id})">Excluir</button>
-        </div>
-      `;
-      tasksContainer.appendChild(div);
     });
-}
 
-filtroArea.addEventListener("change", atualizarLista);
-filtroUrgencia.addEventListener("change", atualizarLista);
+  const pendentes = tarefasFiltradas.filter((t) => !t.realizada).length;
+  resumoTarefas.textContent = `Mostrando ${tarefasFiltradas.length} tarefa(s). Pendentes: ${pendentes}.`;
 
-function marcarRealizada(id) {
+  tarefasFiltradas.forEach((t) => {
+    tasksContainer.appendChild(criarCardTarefa(t));
+  });
+};
+
+// Marca tarefa como feita
+const marcarRealizada = (id) => {
   const tarefa = tarefas.find((t) => t.id === id);
-  if (tarefa) tarefa.realizada = true;
-}
+  if (tarefa && !tarefa.realizada) {
+    tarefa.realizada = true;
+    salvarTarefas();
+    atualizarLista();
+  }
+};
 
-// Editar tarefa: carrega os dados no formulário e exclui a antiga
-function editarTarefa(id) {
+// Exclui tarefa pelo ID
+const excluirTarefa = (id) => {
+  tarefas = tarefas.filter((t) => t.id !== id);
+  salvarTarefas();
+  atualizarLista();
+};
+
+// Preenche o formulário com dados para edição
+const editarTarefa = (id) => {
   const tarefa = tarefas.find((t) => t.id === id);
   if (tarefa) {
-    form.title.value = tarefa.title;
+    form.atividade.value = tarefa.title;
     form.urgencia.value = tarefa.urgencia;
     form.area.value = tarefa.area;
-    form.duration.value = tarefa.duration;
-    form.day.value = tarefa.day;
-    form.obs.value = tarefa.obs;
+    form.horaInicio.value = tarefa.startTime;
+    form.horaTermino.value = tarefa.endTime;
+    form.dia.value = tarefa.day;
+    form.observacoes.value = tarefa.obs;
     excluirTarefa(id);
   }
-}
+};
 
-// Excluir tarefa pelo id
-function excluirTarefa(id) {
-  tarefas = tarefas.filter((t) => t.id !== id);
+// Adiciona nova tarefa
+form.addEventListener("submit", (e) => {
+  e.preventDefault();
+
+  const novaTarefa = {
+    id: Date.now(),
+    title: form.atividade.value.trim(),
+    urgencia: form.urgencia.value,
+    area: form.area.value,
+    startTime: form.horaInicio.value,
+    endTime: form.horaTermino.value,
+    day: form.dia.value,
+    obs: form.observacoes.value.trim(),
+    realizada: false,
+  };
+
+  if (!validarCampos(novaTarefa)) return;
+
+  tarefas.push(novaTarefa);
+  salvarTarefas();
   atualizarLista();
-}
+  limparFormulario();
 
-// Reagenda tarefas não realizadas com data anterior a hoje para o dia seguinte
-function reagendarTarefas() {
-  const hoje = new Date().toISOString().split("T")[0];
-  tarefas.forEach((tarefa) => {
-    if (!tarefa.realizada && tarefa.day < hoje) {
-      const novaData = new Date();
-      novaData.setDate(novaData.getDate() + 1);
-      tarefa.day = novaData.toISOString().split("T")[0];
-    }
-  });
-  atualizarLista();
-}
-
-setInterval(reagendarTarefas, 10000);
-
-// Exporta as tarefas filtradas para PDF
-async function exportarPDF() {
-  const jsPDF = window.jspdf.jsPDF;
-  const doc = new jsPDF();
-
-  let y = 10;
-  tarefas.forEach((t, i) => {
-    doc.text(`Tarefa ${i + 1}: ${t.title}`, 10, y);
-    doc.text(
-      `Urgência: ${t.urgencia} | Área: ${t.area} | Duração: ${t.duration} min`,
-      10,
-      y + 10
-    );
-    doc.text(`Data: ${t.day}`, 10, y + 20);
-    doc.text(`Obs: ${t.obs}`, 10, y + 30);
-    y += 45;
-  });
-
-  doc.save("planner.pdf");
-}
-
-// Edição inline com eventos delegados
-tasksContainer.addEventListener("click", (e) => {
-  const target = e.target;
-
-  // Botão Excluir
-  if (target.classList.contains("btn-danger")) {
-    const card = target.closest(".task-card");
-    if (!card) return;
-    // Pegar ID da tarefa pelo título (não ideal, mas funciona aqui)
-    const titulo = card.querySelector(".card-title").textContent;
-    const tarefa = tarefas.find((t) => t.title === titulo);
-    if (tarefa) {
-      excluirTarefa(tarefa.id);
-    }
-  }
-
-  // Botão Feita
-  if (target.classList.contains("btn-success")) {
-    const card = target.closest(".task-card");
-    if (!card) return;
-    const titulo = card.querySelector(".card-title").textContent;
-    const tarefa = tarefas.find((t) => t.title === titulo);
-    if (tarefa) {
-      marcarRealizada(tarefa.id);
-      target.disabled = true;
-      target.textContent = "Feita";
-      card.style.opacity = "0.6";
-    }
-  }
-
-  // Botão Editar (abre o formulário com os dados)
-  if (target.classList.contains("btn-warning")) {
-    const card = target.closest(".task-card");
-    if (!card) return;
-    const titulo = card.querySelector(".card-title").textContent;
-    const tarefa = tarefas.find((t) => t.title === titulo);
-    if (tarefa) {
-      editarTarefa(tarefa.id);
-    }
-  }
+  mensagemErro.textContent = "✅ Tarefa adicionada!";
+  setTimeout(() => (mensagemErro.textContent = ""), 2500);
 });
+
+// Filtros atualizam a lista
+[filtroArea, filtroUrgencia, filtroDia].forEach((el) =>
+  el.addEventListener("change", atualizarLista)
+);
+
+// Apaga todas as tarefas
+const limparTudo = () => {
+  if (confirm("Deseja apagar TODAS as tarefas?")) {
+    tarefas = [];
+    salvarTarefas();
+    atualizarLista();
+  }
+};
+
+// Alterna o modo escuro
+const toggleDarkMode = () => {
+  document.body.classList.toggle("dark-mode");
+};
+
+// Exporta as tarefas para PDF (usando jsPDF via CDN)
+const exportarPDF = () => {
+  import("https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js").then((jsPDFModule) => {
+    const { jsPDF } = jsPDFModule;
+    const doc = new jsPDF();
+    let y = 10;
+
+    doc.setFontSize(16);
+    doc.text("Tarefas Planejadas", 10, y);
+    y += 10;
+
+    tarefas.forEach((t, i) => {
+      const texto = `${i + 1}. ${t.title} (${t.day}) - ${t.startTime} às ${t.endTime} - ${t.area} - ${t.urgencia}`;
+      doc.setFontSize(10);
+      doc.text(texto, 10, y);
+      y += 6;
+      if (y > 280) {
+        doc.addPage();
+        y = 10;
+      }
+    });
+
+    doc.save("tarefas.pdf");
+  });
+};
+
+// Inicializa ao carregar a página
+document.addEventListener("DOMContentLoaded", atualizarLista);
