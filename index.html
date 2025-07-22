@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title class="text center">Planner Semanal Inteligente</title>
+    <title>Planner Semanal Inteligente</title>
     <link rel="stylesheet" href="css/style.css" />
   </head>
   <body>
@@ -11,13 +11,13 @@
       <div class="container text center">
         <h1>Planner Semanal</h1>
         <button onclick="toggleDarkMode()" aria-label="Alternar modo escuro">
-          🌙 Modo Escuro
+          🌙 Alterar Tema ☀️
         </button>
       </div>
     </header>
 
     <main class="container">
-      <!-- Formulário principal -->
+      <!-- Formulário para adicionar tarefas -->
       <section aria-labelledby="titulo-form">
         <h2 id="titulo-form">Adicionar Tarefa</h2>
         <form id="task-form">
@@ -83,7 +83,7 @@
         <div id="mensagem-erro" role="alert"></div>
       </section>
 
-      <!-- Filtro de pesquisa -->
+      <!-- Filtros -->
       <h2 id="filtro">Filtrar Tarefas</h2>
       <section class="filtro-section" aria-labelledby="filtro">
         <div>
@@ -114,13 +114,11 @@
         </div>
       </section>
 
-      <!-- Resumo de tarefas -->
+      <!-- Resumo e lista de tarefas -->
       <p id="resumo-tarefas">Nenhuma tarefa ainda.</p>
-
-      <!-- Lista de tarefas -->
       <section id="tasks-container" aria-live="polite"></section>
 
-      <!-- Ações extras -->
+      <!-- Ações -->
       <div class="container">
         <section class="acoes">
           <div>
@@ -137,6 +135,8 @@
       <p style="text-align: center">&copy; 2025 Planner Semanal Inteligente</p>
     </footer>
 
+    <!-- Scripts -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <script src="js/script.js"></script>
   </body>
 </html>
